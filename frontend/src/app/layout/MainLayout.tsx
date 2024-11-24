@@ -1,10 +1,12 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 import { FC, ReactNode } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface IMainLayoutProps {
   children: ReactNode;
 }
 export const MainLayout: FC<IMainLayoutProps> = ({ children }) => {
+  const navigate = useNavigate();
   return (
     <Box
       sx={{
@@ -25,8 +27,13 @@ export const MainLayout: FC<IMainLayoutProps> = ({ children }) => {
           alignItems: "center",
         }}
       >
-        <Typography sx={{ color: "#fff", marginLeft: "2em" }}>
-          Команда "АБАМА"
+        <Typography>
+          <Button
+            onClick={() => navigate("/")}
+            sx={{ color: "#fff", marginLeft: "2em" }}
+          >
+            Команда "АБАМА"
+          </Button>
         </Typography>
         <Typography sx={{ color: "#fff", marginRight: "2em" }}>
           AI ENGINEERING HACKATON{" "}

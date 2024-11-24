@@ -1,6 +1,7 @@
-import { Box, Button } from "@mui/material";
-import { FC, useState } from "react";
+import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import { FC, useEffect, useState } from "react";
 import { useLazyCreateModelQuery } from "../../api";
+import { StlViewer } from "react-stl-viewer";
 
 type TFiles = {
   f: string | undefined;
@@ -12,7 +13,7 @@ type TFiles = {
 };
 
 export const CreateModelPage: FC = () => {
-  const [trigger, result, lastPromiseInfo] = useLazyCreateModelQuery();
+  const [trigger, result] = useLazyCreateModelQuery();
   const [files, setFiles] = useState<TFiles>({
     f: "",
     fFile: null,
@@ -28,6 +29,158 @@ export const CreateModelPage: FC = () => {
 
   const [model3D, setModel3D] = useState<string>("");
 
+  useEffect(() => {
+    if (result.data) {
+      setDownloadableContent(result.data);
+      setModel3D(URL.createObjectURL(result.data));
+    }
+  }, [result.data, result.isSuccess]);
+
+  const handleDownloadButton = () => {
+    if (!downloadableContent) return;
+    const element = document.createElement("a");
+    element.href = URL.createObjectURL(downloadableContent);
+
+    element.setAttribute("download", `result.stl`);
+
+    document.body.appendChild(element);
+    element.click();
+  };
+
+  if (result.isLoading) {
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column",
+      }}
+    >
+      <CircularProgress />
+    </Box>;
+  }
+
+  if (result.isError || !result.isSuccess) {
+    <Box
+      sx={{
+        width: "100%",
+        height: "100%",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        flexDirection: "column",
+      }}
+    >
+      <Typography
+        sx={{
+          fontWeight: 500,
+          fontSize: "2em",
+        }}
+      >
+        Произошла ошибка :(
+      </Typography>
+
+      <Button
+        onClick={() => {
+          setModel3D("");
+          setDownloadableContent(null);
+          setFiles({
+            f: "",
+            fFile: null,
+            r: "",
+            rFile: null,
+            t: "",
+            tFile: null,
+          });
+        }}
+        sx={{
+          fontSize: "1em",
+        }}
+        variant="contained"
+      >
+        Попробовать ещё раз
+      </Button>
+    </Box>;
+  }
+  if (result.isSuccess && model3D && downloadableContent) {
+    return (
+      <Box
+        sx={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          flexDirection: "column",
+        }}
+      >
+        <Typography
+          sx={{
+            fontWeight: 500,
+            fontSize: "1.5em",
+          }}
+        >
+          Результат работы модели
+        </Typography>
+        <Box
+          sx={{
+            border: "2px black solid",
+            margin: "5px",
+          }}
+        >
+          <StlViewer
+            style={{
+              height: "75vh",
+              width: "80vw",
+            }}
+            orbitControls
+            shadows
+            url={model3D}
+          />
+        </Box>
+        <Box
+          sx={{
+            width: "100%",
+            display: "flex",
+            flexDirection: "row",
+            justifyContent: "space-around",
+          }}
+        >
+          <Button
+            sx={{
+              fontSize: "1em",
+            }}
+            variant="contained"
+            onClick={() => handleDownloadButton()}
+          >
+            Скачать данную модель в формате STL
+          </Button>
+          <Button
+            onClick={() => {
+              setModel3D("");
+              setDownloadableContent(null);
+              setFiles({
+                f: "",
+                fFile: null,
+                r: "",
+                rFile: null,
+                t: "",
+                tFile: null,
+              });
+            }}
+            sx={{
+              fontSize: "1em",
+            }}
+            variant="contained"
+          >
+            Создать новую модель
+          </Button>
+        </Box>
+      </Box>
+    );
+  }
   return (
     <Box
       sx={{
@@ -99,12 +252,12 @@ export const CreateModelPage: FC = () => {
         }}
         variant="contained"
         disabled={!(files.f && files.r && files.t)}
-        onClick={() => {
+        onClick={async () => {
           const bodyFormData = new FormData();
           if (files.fFile && files.rFile && files.tFile) {
-            bodyFormData.append("f", files.fFile);
-            bodyFormData.append("r", files.rFile);
-            bodyFormData.append("t", files.tFile);
+            bodyFormData.append("front", files.fFile);
+            bodyFormData.append("side", files.rFile);
+            bodyFormData.append("top", files.tFile);
             trigger(bodyFormData);
           }
         }}

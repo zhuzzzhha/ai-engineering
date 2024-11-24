@@ -7,10 +7,11 @@ export const cadModelApi = createApi({
     createModel: build.query({
       query: (formData) => {
         return {
-          url: "/aaaa",
+          url: "http://127.0.0.1:5000/upload_images",
           method: "POST",
           body: formData,
           formData: true,
+          responseHandler: (response) => response.blob(),
         };
       },
     }),
