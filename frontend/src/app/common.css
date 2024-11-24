@@ -1,0 +1,10 @@
+*:not(svg *){
+    all: unset;
+    display: revert;
+}
+body {
+    /* background-color: #121212;
+    background-image: linear-gradient(0deg, #222831 0%, #222831 100%); */
+    font-weight: 400;
+    font-family: "Gill Sans", sans-serif;
+}
