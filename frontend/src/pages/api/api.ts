@@ -7,7 +7,7 @@ export const cadModelApi = createApi({
     createModel: build.query({
       query: (formData) => {
         return {
-          url: "http://127.0.0.1:5000/upload_images",
+          url: "https://test-ai-deployment.onrender.com/upload_images",
           method: "POST",
           body: formData,
           formData: true,
