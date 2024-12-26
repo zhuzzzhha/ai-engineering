@@ -4,17 +4,17 @@ from werkzeug.utils import secure_filename
 import os
 import cv2
 import sys
-from ml.inference import execute_algo
+from ml.inference import execute_algo # Assuming you still want to use execute_algo
 from pathlib import Path
-from config import UPLOAD_FOLDER, REMOVE_TIME
-from utils import allowed_file, get_current_time, get_model, preprocess, process, get_image_w_h, remove_old_files
+from config import UPLOAD_FOLDER, REMOVE_TIME # Assuming you have these
+from utils import allowed_file, get_current_time, get_model, preprocess, process, get_image_w_h, remove_old_files # Assuming these exist
 
 app = Flask(__name__)
 app.secret_key = "secret key"
 app.config['UPLOAD_FOLDER'] = 'misc/'
 app.config['MAX_CONTENT_LENGTH'] = 20 * 1024 * 1024
 
-CORS(app, resources={r"/*": {"origins": "*"}})  # Разрешает доступ всем доменам
+CORS(app, resources={r"/*": {"origins": "*"}})
 
 file = Path(__file__).resolve()
 parent, root = file.parent, file.parents[1]
@@ -31,44 +31,48 @@ def upload_form():
     return render_template('home.html')
 
 
-@app.route('/upload_images', methods=['POST'])
-def upload_images():
-    if 'front' not in request.files or 'side' not in request.files or 'top' not in request.files:
-        flash('No file part')
+@app.route('/process_data', methods=['POST'])
+def process_data():
+
+    if 'image' not in request.files or 'text' not in request.form:
+        flash('Missing file or text input')
         return redirect(request.url)
 
-    front_file = request.files['front']
-    side_file = request.files['side']
-    top_file = request.files['top']
+    image_file = request.files['image']
+    input_text = request.form['text']
 
-    if front_file.filename == '' or side_file.filename == '' or top_file.filename == '':
-        flash('No images selected for uploading')
+
+    if image_file.filename == '':
+        flash('No image selected for uploading')
+        return redirect(request.url)
+    
+    if not input_text:
+        flash('No text was provided!')
         return redirect(request.url)
 
-    if all(allowed_file(f.filename) for f in [front_file, side_file, top_file]):
-
-        # Генерируем уникальные имена для сохранения
+    if allowed_file(image_file.filename):
+        # Generate a unique filename for saving
         now = get_current_time()
-        front_filename = now + secure_filename(front_file.filename)
-        side_filename = now + secure_filename(side_file.filename)
-        top_filename = now + secure_filename(top_file.filename)
+        image_filename = now + secure_filename(image_file.filename)
+        image_file_path = os.path.join(UPLOAD_FOLDER, image_filename)
 
-        # Сохраняем изображения
-        front_file_path = os.path.join(UPLOAD_FOLDER, front_filename)
-        side_file_path = os.path.join(UPLOAD_FOLDER, side_filename)
-        top_file_path = os.path.join(UPLOAD_FOLDER, top_filename)
+        # Save the image
+        image_file.save(image_file_path)
 
-        front_file.save(front_file_path)
-        side_file.save(side_file_path)
-        top_file.save(top_file_path)
-
-        execute_algo(top_file_path, side_file_path, front_file_path)
-        # Возвращаем файлы в multipart response
-        return send_file('output/inference_stl.stl', as_attachment=True, download_name="output.stl")
+        #Preprocess the text
+        processed_text = preprocess(input_text)
+        
+        # Execute processing algorithm (assuming it can take text and an image path)
+        # Note: you may need to modify ml/inference/execute_algo to handle this.
+        execute_algo(image_file_path, processed_text) 
+         
+        # Return the generated file as a download
+        return send_file('output/inference.png', as_attachment=True, download_name="output.stl")
 
     else:
         flash('Allowed image types are -> png, jpg, jpeg')
         return redirect(request.url)
+
 
 if __name__ == "__main__":
     app.run(port=5085)
